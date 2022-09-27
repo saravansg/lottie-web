@@ -115,7 +115,7 @@ SVGRenderer.prototype.configAnimation = function (animData) {
   }
   this.svgElement.setAttribute('preserveAspectRatio', this.renderConfig.preserveAspectRatio);
   // this.layerElement.style.transform = 'translate3d(0,0,0)';
-  // this.layerElement.style.transformOrigin = this.layerElement.style.mozTransformOrigin = this.layerElement.style.webkitTransformOrigin = this.layerElement.style['-webkit-transform'] = "0px 0px 0px";
+  // this.layerElement.style.transformOrigin = this.layerElement.style.mozTransformOrigin = this.layerElement.style.webkitTransformOrigin = this.layerElement.style['-webkit-transform'] = '0px 0px 0px';
   this.animationItem.wrapper.appendChild(this.svgElement);
   // Mask animation
   var defs = this.globalData.defs;
@@ -168,6 +168,53 @@ SVGRenderer.prototype.buildItem = function (pos) {
   }
   elements[pos] = true;
   var element = this.createItem(this.layers[pos]);
+
+  try {
+    var layer = this.layers[pos];
+    if (element.baseElement) {
+      element.baseElement.setAttribute('data-layer-name', layer.nm.toLocaleUpperCase());
+      if (layer.elementhide) {
+        element.baseElement.setAttribute('style', layer.elementhide);
+      }
+    }
+    if (element.layerElement) {
+      element.layerElement.setAttribute('data-layer-name', layer.nm.toLocaleUpperCase());
+      if (layer.elementhide) {
+        element.baseElement.setAttribute('style', layer.elementhide);
+      }
+    }
+    if (layer.nm.search('bgcolor') > -1) {
+      var pathBGNodes = element.layerElement.querySelectorAll('path');
+      var bg = 0;
+      for (bg = 0; bg < pathBGNodes.length; bg += 1) {
+        pathBGNodes[bg].setAttribute('class', 'moodLottieBackgroundClass');
+      }
+    }
+    if (layer.nm.search('tertiarycolor') > -1) {
+      var pathBGNodesa = element.layerElement.querySelectorAll('path');
+      var bga = 0;
+      for (bga = 0; bga < pathBGNodesa.length; bga += 1) {
+        pathBGNodesa[bga].setAttribute('class', 'tertiary-stroke tertiary-fill tertiary-color');
+      }
+    }
+    if (layer.nm.search('color') > -1 && layer.nm.search('comp') < 0 && element.comp.data.nm.search('comp') < 0 && layer.nm.search('bgcolor') < 0 && layer.nm.search('tertiarycolor') < 0) {
+      var colorIndex = layer.nm.replace('color', '');
+      var pathNodes = element.layerElement.querySelectorAll('path');
+      var cl = 0;
+      for (cl = 0; cl < pathNodes.length; cl += 1) {
+        var fill = 'accent' + colorIndex + '-fill accent' + colorIndex + '-stroke'; pathNodes[cl].setAttribute('class', fill);
+      }
+    }
+    if (layer.nm.toLocaleUpperCase().indexOf('ICON') > -1) {
+      var pathNode = element.baseElement.querySelector('path').parentNode; pathNode.innerHTML = '';
+      pathNode.appendChild(layer.layers[0].defs);
+    }
+    if (layer.nm.toLocaleUpperCase().indexOf('OVERLAY') > -1) {
+      element.layerElement.style.pointerEvents = 'none';
+    }
+  } catch (error) {
+    console.log(error);
+  }
 
   elements[pos] = element;
   if (expressionsPlugin) {
