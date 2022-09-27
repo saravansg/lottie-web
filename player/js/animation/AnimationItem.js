@@ -1,9 +1,28 @@
-/* global createElementID, subframeEnabled, ProjectInterface, ImagePreloader, audioControllerFactory, extendPrototype, BaseEvent,
-CanvasRenderer, SVGRenderer, HybridRenderer, dataManager, expressionsPlugin, BMEnterFrameEvent, BMCompleteLoopEvent,
-BMCompleteEvent, BMSegmentStartEvent, BMDestroyEvent, BMEnterFrameEvent, BMCompleteLoopEvent, BMCompleteEvent, BMSegmentStartEvent,
-BMDestroyEvent, BMRenderFrameErrorEvent, BMConfigErrorEvent, markerParser */
+import {
+  extendPrototype,
+} from '../utils/functionExtensions';
 
-var AnimationItem = function () {
+import audioControllerFactory from '../utils/audio/AudioController';
+import {
+  getSubframeEnabled,
+  BMEnterFrameEvent,
+  BMCompleteEvent,
+  BMCompleteLoopEvent,
+  BMSegmentStartEvent,
+  BMDestroyEvent,
+  BMRenderFrameErrorEvent,
+  BMConfigErrorEvent,
+  createElementID,
+  getExpressionsPlugin,
+} from '../utils/common';
+import ImagePreloader from '../utils/imagePreloader';
+import BaseEvent from '../utils/BaseEvent';
+import dataManager from '../utils/DataManager';
+import markerParser from '../utils/markers/markerParser';
+import ProjectInterface from '../utils/expressions/ProjectInterface';
+import { getRenderer } from '../renderers/renderersManager';
+
+const AnimationItem = function () {
   this._cbs = [];
   this.name = '';
   this.path = '';
@@ -27,7 +46,7 @@ var AnimationItem = function () {
   this.assetsPath = '';
   this.timeCompleted = 0;
   this.segmentPos = 0;
-  this.isSubframeEnabled = subframeEnabled;
+  this.isSubframeEnabled = getSubframeEnabled();
   this.segments = [];
   this._idle = true;
   this._completedLoop = false;
@@ -38,6 +57,7 @@ var AnimationItem = function () {
   this.configAnimation = this.configAnimation.bind(this);
   this.onSetupError = this.onSetupError.bind(this);
   this.onSegmentComplete = this.onSegmentComplete.bind(this);
+  this.drawnFrameEvent = new BMEnterFrameEvent('drawnFrame', 0, 0, 0);
 };
 
 extendPrototype([BaseEvent], AnimationItem);
@@ -52,17 +72,8 @@ AnimationItem.prototype.setParams = function (params) {
   } else if (params.renderer) {
     animType = params.renderer;
   }
-  switch (animType) {
-    case 'canvas':
-      this.renderer = new CanvasRenderer(this, params.rendererSettings);
-      break;
-    case 'svg':
-      this.renderer = new SVGRenderer(this, params.rendererSettings);
-      break;
-    default:
-      this.renderer = new HybridRenderer(this, params.rendererSettings);
-      break;
-  }
+  const RendererClass = getRenderer(animType);
+  this.renderer = new RendererClass(this, params.rendererSettings);
   this.imagePreloader.setCacheType(animType, this.renderer.globalData.defs);
   this.renderer.setProjectInterface(this.projectInterface);
   this.animType = animType;
@@ -228,6 +239,7 @@ AnimationItem.prototype.includeLayers = function (data) {
 
 AnimationItem.prototype.onSegmentComplete = function (data) {
   this.animationData = data;
+  var expressionsPlugin = getExpressionsPlugin();
   if (expressionsPlugin) {
     expressionsPlugin.initExpressions(this);
   }
@@ -323,6 +335,7 @@ AnimationItem.prototype.checkLoaded = function () {
         && (this.imagePreloader.loadedFootages())
   ) {
     this.isLoaded = true;
+    var expressionsPlugin = getExpressionsPlugin();
     if (expressionsPlugin) {
       expressionsPlugin.initExpressions(this);
     }
@@ -337,8 +350,8 @@ AnimationItem.prototype.checkLoaded = function () {
   }
 };
 
-AnimationItem.prototype.resize = function () {
-  this.renderer.updateContainerSize();
+AnimationItem.prototype.resize = function (width, height) {
+  this.renderer.updateContainerSize(width, height);
 };
 
 AnimationItem.prototype.setSubframe = function (flag) {
@@ -373,6 +386,7 @@ AnimationItem.prototype.play = function (name) {
   }
   if (this.isPaused === true) {
     this.isPaused = false;
+    this.trigger('_pause');
     this.audioController.resume();
     if (this._idle) {
       this._idle = false;
@@ -387,6 +401,7 @@ AnimationItem.prototype.pause = function (name) {
   }
   if (this.isPaused === false) {
     this.isPaused = true;
+    this.trigger('_play');
     this._idle = true;
     this.trigger('_idle');
     this.audioController.pause();
@@ -704,12 +719,26 @@ AnimationItem.prototype.getDuration = function (isFrame) {
   return isFrame ? this.totalFrames : this.totalFrames / this.frameRate;
 };
 
+AnimationItem.prototype.updateDocumentData = function (path, documentData, index) {
+  try {
+    var element = this.renderer.getElementByPath(path);
+    element.updateDocumentData(documentData, index);
+  } catch (error) {
+    // TODO: decide how to handle catch case
+  }
+};
+
 AnimationItem.prototype.trigger = function (name) {
   if (this._cbs && this._cbs[name]) {
     switch (name) {
       case 'enterFrame':
-      case 'drawnFrame':
         this.triggerEvent(name, new BMEnterFrameEvent(name, this.currentFrame, this.totalFrames, this.frameModifier));
+        break;
+      case 'drawnFrame':
+        this.drawnFrameEvent.currentTime = this.currentFrame;
+        this.drawnFrameEvent.totalTime = this.totalFrames;
+        this.drawnFrameEvent.direction = this.frameModifier;
+        this.triggerEvent(name, this.drawnFrameEvent);
         break;
       case 'loopComplete':
         this.triggerEvent(name, new BMCompleteLoopEvent(name, this.loop, this.playCount, this.frameMult));
@@ -761,3 +790,5 @@ AnimationItem.prototype.triggerConfigError = function (nativeError) {
     this.onError.call(this, error);
   }
 };
+
+export default AnimationItem;

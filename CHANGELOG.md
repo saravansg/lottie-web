@@ -1,3 +1,47 @@
+## V 5.9.6
+- FIX: Bodymovin export missing comps
+- FIX: Disambiguate bevelEmboss properties (thanks @mbasaglia)
+- FEATURE: Add support for image export individual settings via annotations
+
+## V 5.9.5
+- FIX: Expand the hybrid shape bounding box on stroke (thanks @mbasaglia)
+- FEATURE: support filter size on drop shadow property
+- FIX: canvas worker - handle destroying animation instance before data is loaded
+- FIX: canvas worker = pass own canvas fix (thanks @knenkne)
+- FIX: bodymovin extension out of storage
+- FEATURE: integration with canilottie
+
+## V 5.9.4
+- FIX: support for all marker definitions
+- FIX: improve composable filters
+- FIX: strokes with correct width on fonts
+
+## V 5.9.3
+- FEATURE: Add support for isPaused property on lottie worker
+- FEATURE: Adds support for changing volume based on the audio layer data
+- FEATURE: add support for removeEventListener on worker
+- FEATURE: add support for updateDocumentData on worker
+- FEATURE: add text as font support on worker
+- FIX: avoid crash when script does not have src
+
+## V 5.9.2
+- FEATURE: add support for playsegments and blend mode on lottie worker
+- FIX: Fix ts typing for loadAnimation parameter
+- FEATURE: allows to set width and height of svg from config
+- FIX: Fix getMarkerData bug
+- FEATURE: Add type for goToAndPlay & goToAndStop
+- FIX: add time to list of code for preventing removal
+- FIX: glyphs removed from DOM before reloading
+
+## V 5.9.1
+- FIX: navigator validation for SSR
+
+## V 5.9.0
+- FEATURE: Added support for using shapes as animated characters
+- FIX: added methods used by expressions to an array to prevent treeshaking
+- DEV: Migrated code to imports
+- DEV: Use Rollup for build process
+
 ## V 5.8.1
 - FEATURE: added more methods available for the lottie worker player
 
