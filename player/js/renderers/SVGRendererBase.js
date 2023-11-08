@@ -110,7 +110,7 @@ SVGRendererBase.prototype.destroy = function () {
   var i;
   var len = this.layers ? this.layers.length : 0;
   for (i = 0; i < len; i += 1) {
-    if (this.elements[i]) {
+    if (this.elements[i] && this.elements[i].destroy) {
       this.elements[i].destroy();
     }
   }
@@ -120,6 +120,17 @@ SVGRendererBase.prototype.destroy = function () {
 };
 
 SVGRendererBase.prototype.updateContainerSize = function () {
+};
+
+SVGRendererBase.prototype.findIndexByInd = function (ind) {
+  var i = 0;
+  var len = this.layers.length;
+  for (i = 0; i < len; i += 1) {
+    if (this.layers[i].ind === ind) {
+      return i;
+    }
+  }
+  return -1;
 };
 
 SVGRendererBase.prototype.buildItem = function (pos) {
@@ -185,11 +196,19 @@ SVGRendererBase.prototype.buildItem = function (pos) {
   }
   this.appendElementInPos(element, pos);
   if (this.layers[pos].tt) {
-    if (!this.elements[pos - 1] || this.elements[pos - 1] === true) {
-      this.buildItem(pos - 1);
+    var elementIndex = ('tp' in this.layers[pos])
+      ? this.findIndexByInd(this.layers[pos].tp)
+      : pos - 1;
+    if (elementIndex === -1) {
+      return;
+    }
+    if (!this.elements[elementIndex] || this.elements[elementIndex] === true) {
+      this.buildItem(elementIndex);
       this.addPendingElement(element);
     } else {
-      element.setMatte(elements[pos - 1].layerId);
+      var matteElement = elements[elementIndex];
+      var matteMask = matteElement.getMatte(this.layers[pos].tt);
+      element.setMatte(matteMask);
     }
   }
 };
@@ -203,7 +222,12 @@ SVGRendererBase.prototype.checkPendingElements = function () {
       var len = this.elements.length;
       while (i < len) {
         if (this.elements[i] === element) {
-          element.setMatte(this.elements[i - 1].layerId);
+          var elementIndex = 'tp' in element.data
+            ? this.findIndexByInd(element.data.tp)
+            : i - 1;
+          var matteElement = this.elements[elementIndex];
+          var matteMask = matteElement.getMatte(this.layers[i].tt);
+          element.setMatte(matteMask);
           break;
         }
         i += 1;

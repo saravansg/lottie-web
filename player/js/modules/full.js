@@ -1,6 +1,7 @@
 import lottie from './main';
 import {
   setExpressionsPlugin,
+  setExpressionInterfaces,
 } from '../utils/common';
 import { ShapeModifiers } from '../utils/shapes/ShapeModifiers';
 import TrimModifier from '../utils/shapes/TrimModifier';
@@ -16,6 +17,7 @@ import {
   registerRenderer,
 } from '../renderers/renderersManager';
 import Expressions from '../utils/expressions/Expressions';
+import interfacesProvider from '../utils/expressions/InterfacesProvider';
 import expressionPropertyDecorator from '../utils/expressions/ExpressionPropertyDecorator';
 import expressionTextPropertyDecorator from '../utils/expressions/ExpressionTextPropertyDecorator';
 // SVG effects
@@ -28,6 +30,9 @@ import SVGProLevelsFilter from '../elements/svgElements/effects/SVGProLevelsFilt
 import SVGDropShadowEffect from '../elements/svgElements/effects/SVGDropShadowEffect';
 import SVGMatte3Effect from '../elements/svgElements/effects/SVGMatte3Effect';
 import SVGGaussianBlurEffect from '../elements/svgElements/effects/SVGGaussianBlurEffect';
+import SVGTransformEffect from '../elements/svgElements/effects/SVGTransformEffect';
+import CVTransformEffect from '../elements/canvasElements/effects/CVTransformEffect';
+import { registerEffect as canvasRegisterEffect } from '../elements/canvasElements/CVEffects';
 
 // Registering renderers
 registerRenderer('canvas', CanvasRenderer);
@@ -44,6 +49,7 @@ ShapeModifiers.registerModifier('op', OffsetPathModifier);
 
 // Registering expression plugin
 setExpressionsPlugin(Expressions);
+setExpressionInterfaces(interfacesProvider);
 expressionPropertyDecorator();
 expressionTextPropertyDecorator();
 
@@ -56,5 +62,7 @@ registerEffect(24, SVGProLevelsFilter, true);
 registerEffect(25, SVGDropShadowEffect, true);
 registerEffect(28, SVGMatte3Effect, false);
 registerEffect(29, SVGGaussianBlurEffect, true);
+registerEffect(35, SVGTransformEffect, false);
+canvasRegisterEffect(35, CVTransformEffect);
 
 export default lottie;
